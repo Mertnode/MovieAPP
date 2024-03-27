@@ -2,7 +2,6 @@ import asyncHandler from "express-async-handler";
 import User from "../models/userSchema.js"
 import bcrypt from "bcryptjs"
 import {generateToken} from "../middlewares/Auth.js";
-import * as buffer from "buffer";
 
 
  export const registerUser = asyncHandler(async (req,res) => {
@@ -156,6 +155,64 @@ export const changeUserPassword = asyncHandler(async (req, res) => {
 
         res.json({ message: "Şifre başarıyla değiştirildi" });
     } catch (e) {
-        res.status(res.statusCode === 200 ? 400 : res.statusCode).json({ message: e.message });
+        res.status(400).json({message: e.message})
     }
 });
+
+export const getLikedMovies = asyncHandler(async (req,res) => {
+    try {
+        const user = await User.findById(req.user.id).populate("likedMovies")
+        if (user) {
+            res.json(user.likedMovies)
+        } else {
+            res.status(404)
+            throw new Error("user not found")
+        }
+    } catch (e) {
+        res.status(400).json({message: e.message})
+    }
+})
+
+export const addLikeMovie = asyncHandler(async (req, res) => {
+   const {movieId} = req.body;
+   try {
+       const user = await User.findById(req.user._id)
+
+       if (user) {
+           if (user.likedMovies.includes(movieId)) {
+               res.status(400)
+               throw new Error("Movie already liked")
+           }
+           user.likedMovies.push(movieId)
+           await user.save()
+       } else {
+           res.status(404);
+           throw new Error("Movie not found")
+       }
+
+   } catch (e) {
+       res.status(400).json({message: e.message})
+   }
+});
+
+export const deleteLikedMovie = asyncHandler(async (req,res) => {
+
+})
+
+const deleteLikedMovies = asyncHandler(async (req,res) => {
+    try {
+        const user = await User.findById(req.user._id)
+
+        if (user) {
+            user.likedMovies = []
+            await user.save()
+            res.json({message: "all liked movies deleted successfully" })
+        } else {
+            res.status(404)
+            throw new Error("User not found")
+        }
+
+    } catch (e) {
+        res.status(400).json({message: e.message})
+    }
+})

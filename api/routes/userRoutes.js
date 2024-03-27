@@ -1,7 +1,7 @@
 import express from "express";
 import {
     changeUserPassword,
-    deleteUser,
+    deleteUser, getLikedMovies,
     loginUser,
     registerUser,
     updateUserProfile
@@ -17,5 +17,6 @@ router.post("/login",loginUser)
 router.put("/",protect,updateUserProfile)
 router.delete("/",protect,deleteUser)
 router.put("/password",protect,changeUserPassword)
+router.get("/favorites",protect,getLikedMovies)
 
 export default router
