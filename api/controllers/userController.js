@@ -112,7 +112,7 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-export const deleteUser = asyncHandler(async (req,res) => {
+export const deleteUserProfile = asyncHandler(async (req,res) => {
    try {
     const user = await User.findById(req.user._id)
 
@@ -185,6 +185,7 @@ export const addLikeMovie = asyncHandler(async (req, res) => {
            }
            user.likedMovies.push(movieId)
            await user.save()
+           res.status(200).json({message:" Movie added to favorites"})
        } else {
            res.status(404);
            throw new Error("Movie not found")
@@ -195,11 +196,8 @@ export const addLikeMovie = asyncHandler(async (req, res) => {
    }
 });
 
-export const deleteLikedMovie = asyncHandler(async (req,res) => {
 
-})
-
-const deleteLikedMovies = asyncHandler(async (req,res) => {
+export const deleteLikedMovies = asyncHandler(async (req,res) => {
     try {
         const user = await User.findById(req.user._id)
 
@@ -216,3 +214,35 @@ const deleteLikedMovies = asyncHandler(async (req,res) => {
         res.status(400).json({message: e.message})
     }
 })
+
+/*ADMIN  CONTROLLERS*/
+
+//GET USERS
+export const getUsers = asyncHandler(async (req,res) => {
+    try {
+        const user = await User.find({})
+        res.json(user)
+    } catch (e) {
+        res.status(400).json({message: e.message})
+    }
+})
+
+export const deleteUser = asyncHandler(async (req,res) => {
+    try {
+        const user = await User.findById(req.user._id)
+
+        if (!user) {
+            res.status(404)
+            throw new Error("User not found")
+        }
+        if (user.isAdmin) {
+            res.status(403)
+            throw new Error("Cant delete admin user")
+        }
+        await user.deleteOne()
+        res.json({message:"User delete successfully"})
+    } catch (e) {
+        res.status(400).json({message: e.message})
+    }
+})
+
