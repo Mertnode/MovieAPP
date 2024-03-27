@@ -2,8 +2,8 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import {connectDB} from "./config/db.js";
-import {errorHandler} from "./middlewares/errorMiddleware.js";
-import userRouter from "./routes/userRoutes.js"
+import userRoutes from "./routes/userRoutes.js";
+
 dotenv.config();
 connectDB()
 
@@ -16,12 +16,13 @@ app.get("/", (req,res) => {
 })
 
 
-app.use(errorHandler)
+app.use("/api/user/",userRoutes)
 
-app.use("/api/user",userRouter)
+
 
 
 const PORT = process.env["PORT"];
 app.listen(PORT, () => {
     console.log(`Server is runing in http://localhost:${PORT}`)
 })
+
