@@ -131,3 +131,31 @@ export const deleteUser = asyncHandler(async (req,res) => {
        res.status(400).json({message: e.message})
    }
 })
+
+export const changeUserPassword = asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            res.status(404);
+            throw new Error("Kullanıcı bulunamadı");
+        }
+
+        // Eski şifrenin doğruluğunu kontrol etme
+        const passwordMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!passwordMatch) {
+            res.status(400);
+            throw new Error("Eski şifre yanlış");
+        }
+
+        // Yeni şifrenin hashlenmesi ve kullanıcıya atanması
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+        user.password = hashedPassword;
+        await user.save();
+
+        res.json({ message: "Şifre başarıyla değiştirildi" });
+    } catch (e) {
+        res.status(res.statusCode === 200 ? 400 : res.statusCode).json({ message: e.message });
+    }
+});
