@@ -2,6 +2,7 @@ import asyncHandler from "express-async-handler";
 import User from "../models/userSchema.js"
 import bcrypt from "bcryptjs"
 import {generateToken} from "../middlewares/Auth.js";
+import * as buffer from "buffer";
 
 
  export const registerUser = asyncHandler(async (req,res) => {
@@ -68,14 +69,65 @@ export const loginUser = asyncHandler(async (req,res) => {
 })
 
 
-const updateUserProfile = asyncHandler(async (req,res) => {
-    const {fullName,email, image} = req.body;
+export const updateUserProfile = asyncHandler(async (req, res) => {
+    const { fullName, email, image } = req.body;
     try {
-        const user = await User.findById(req.user._id)
+        const user = await User.findById(req.user._id);
         if (user) {
+            // Kullanıcıya 3 güncelleme hakkı sağlama
+            if (fullName !== undefined) {
+                user.fullName = fullName.trim();
+            }
+            if (email !== undefined) {
+                const sanitizedEmail = email.trim().toLowerCase();
 
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(sanitizedEmail)) {
+                    res.status(400);
+                    throw new Error("Geçersiz e-posta adresi");
+                }
+
+                user.email = sanitizedEmail;
+            }
+            if (image !== undefined) {
+                user.image = image;
+            }
+
+            const updatedUser = await user.save();
+
+            // Kullanıcıya geri bildirim sağlama
+            res.json({
+                _id: updatedUser._id,
+                email: updatedUser.email,
+                image: updatedUser.image,
+                isAdmin: updatedUser.isAdmin,
+                token: generateToken(updatedUser._id),
+                message: "Profil başarıyla güncellendi"
+            });
+        } else {
+            res.status(404);
+            throw new Error("Kullanıcı bulunamadı");
         }
     } catch (e) {
         res.status(400).json({message: e.message})
     }
+});
+
+export const deleteUser = asyncHandler(async (req,res) => {
+   try {
+    const user = await User.findById(req.user._id)
+
+       if (!user) {
+           res.status(404)
+           throw new Error("User not found")
+       }
+       if (user.isAdmin) {
+           res.status(403)
+           throw new Error("Cant delete admin user")
+       }
+       await user.deleteOne()
+       res.json({message:"User delete successfully"})
+   } catch (e) {
+       res.status(400).json({message: e.message})
+   }
 })
